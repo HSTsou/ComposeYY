@@ -25,19 +25,33 @@ var playing = MutableStateFlow(false)
 fun VideoPlayer(
     ytVideoId: String = "",
 ) {
+    Log.d("TAG", "VideoPlayer")
     /***
      * mutableStateOf -> update to trigger recompose
+     *
      * remember ->
+     * To not have a different state for every recomposition, remember the mutable state using remember.
+     *
+     *
+     * Composable functions can store a single object in memory by using the remember composable.
+     * A value computed by remember is stored in the Composition during initial composition,
+     * and the stored value is returned during recomposition.
+     * remember can be used to store both mutable and immutable objects.
      */
     var screenWidth by remember { mutableStateOf(0) }
+//    val (screenWidth, setScreenWidth) = remember { mutableStateOf(0) } // every time reset
 
 
     Column {
         YTWebView(
             modifier = Modifier
                 .fillMaxWidth()
-                .aspectRatio(1.78F)
-                .onSizeChanged { screenWidth = it.width },
+                .aspectRatio(1.78F) // 16/9
+                .onSizeChanged {
+                    Log.d("TAG", "VideoPlayer onSizeChanged")
+                    screenWidth = it.width
+//                    setScreenWidth(it.width)
+                },
             id = ytVideoId,
             width = LocalDensity.current.run { screenWidth.toDp() }.value.toInt(),
             onGetWebViewRef = { webView: WebView? ->
@@ -64,16 +78,18 @@ fun VideoPlayer(
                 fontSize = 24.sp,
                 textAlign = TextAlign.Center,
                 color = Color.Black,
-                modifier = Modifier.padding(4.dp).clickable {
-                    Log.d("TAG", "clickable")
-                    if (playing.value) {
-                        postMessage(webViewRef, "pauseVideo")
-                        playing.value = false
-                    } else {
-                        postMessage(webViewRef, "playVideo")
-                        playing.value = true
+                modifier = Modifier
+                    .padding(4.dp)
+                    .clickable {
+                        Log.d("TAG", "clickable")
+                        if (playing.value) {
+                            postMessage(webViewRef, "pauseVideo")
+                            playing.value = false
+                        } else {
+                            postMessage(webViewRef, "playVideo")
+                            playing.value = true
+                        }
                     }
-                }
             )
         }
     }
