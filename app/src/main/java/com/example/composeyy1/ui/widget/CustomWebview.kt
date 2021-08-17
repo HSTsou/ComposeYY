@@ -1,25 +1,31 @@
 package com.example.composeyy1.ui.widget
 
+import android.annotation.SuppressLint
 import android.graphics.Bitmap
+import android.os.Handler
+import android.os.Looper.getMainLooper
 import android.util.Log
-import android.view.View
-import android.view.ViewGroup
 import android.webkit.*
-import android.widget.FrameLayout
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
 
 var webView: WebView? = null
 
+//const val host = "https://www.youtube.com/watch?v="
+const val host = "https://hstsou.github.io/ytPage/?video_id="
+//const val host =  "https://www.youtube.com/embed/"
+
+@SuppressLint("SetJavaScriptEnabled")
 @Composable
 fun CustomWebView(
     modifier: Modifier = Modifier,
-    url: String,
+    id: String,
     width: Int,
     onGetWebViewRef: (webView: WebView?) -> Unit,
+    isPlayingCB: (isPlaying: Boolean) -> Unit,
 ) {
-    Log.d("TAG", "CustomWebView ${url}")
+    Log.d("TAG", "CustomWebView start ${id}")
     val webViewChromeClient = object : WebChromeClient() {
         override fun onProgressChanged(view: WebView?, newProgress: Int) {
 //            onProgressChange(newProgress)
@@ -74,33 +80,77 @@ fun CustomWebView(
 //            onReceivedError(error)
         }
     }
-    Log.d("TAG", "CustomWebView")
+
+    val realUrl = "$host${id}&w=${width}&h=${width / 1.77}"
+
     AndroidView(modifier = modifier, factory = { ctx ->
         WebView(ctx).apply {
             webView = this
-            webView!!.layoutParams = ViewGroup.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.MATCH_PARENT
-            )
+//            webView!!.layoutParams = ViewGroup.LayoutParams(
+//                ViewGroup.LayoutParams.MATCH_PARENT,
+//                ViewGroup.LayoutParams.MATCH_PARENT
+//            ) 會版面過大
             this.webViewClient = webViewClient
             this.webChromeClient = webViewChromeClient
-            settings.pluginState = WebSettings.PluginState.ON_DEMAND
+//            settings.pluginState = WebSettings.PluginState.ON_DEMAND 可不用
             settings.mediaPlaybackRequiresUserGesture = false // 需要加否則會一直 unstarted
             settings.javaScriptEnabled = true
             settings.domStorageEnabled = true
             settings.javaScriptCanOpenWindowsAutomatically = true
             settings.useWideViewPort = true
+            isVerticalFadingEdgeEnabled = false
+            isHorizontalScrollBarEnabled = false
 //            settings.loadWithOverviewMode = true
-            addJavascriptInterface(WebViewInterface(), "ReactNativeWebView")
-            Log.d("TAG", "CustomWebView ${url}&w=${width}&h=${width/1.77}")
-            loadUrl("${url}&w=${width}&h=${width/1.77}")
+
+            val webViewInterface = WebViewInterface();
+            webViewInterface.onVideoListener = object : OnVideoListener {
+                override fun isPlaying(playing: Boolean) {
+                    Log.d("TAG", "isPlaying $playing")
+                    isPlayingCB(playing)
+                }
+            }
+
+            addJavascriptInterface(webViewInterface, "ReactNativeWebView")
+            Log.d("TAG", "CustomWebView $realUrl")
+            loadUrl(realUrl)
             onGetWebViewRef(this)
         }
     }, update = {
-        Log.d("TAG", "CustomWebView ${url}&w=${width}&h=${width/1.77}")
-        it.loadUrl("${url}&w=${width}&h=${width/1.77}")
+        Log.d("TAG", "CustomWebView $realUrl")
+        it.loadUrl(realUrl)
     })
 }
+
+interface OnVideoListener {
+    fun isPlaying(playing: Boolean)
+}
+
+private class WebViewInterface {
+
+    var onVideoListener: OnVideoListener? = null
+
+    @JavascriptInterface
+    fun postMessage(msg: String) {
+        Log.d("TAG", msg)
+        if (msg.contains("onPlayerReady")) {
+            Handler(getMainLooper()).postDelayed({
+                postMessage(webView, "playVideo")
+                onVideoListener?.isPlaying(true)
+            }, 1000)
+        } else if (msg.contains("onPlayerError")) {
+            onVideoListener?.isPlaying(false)
+        }
+    }
+}
+
+fun postMessage(webView: WebView?, method: String) {
+    val script =
+        "handleReactNativeMessage({\"data\":\"{\\\"method\\\":\\\"${method}\\\",\\\"payload\\\":\\\"\\\"}\"})"
+    webView?.evaluateJavascript(script) { call ->
+        Log.d("TAG", "evaluateJavascript done")
+    }
+}
+
 
 // =========== 一年前寫法 ===========
 
@@ -123,23 +173,3 @@ fun CustomWebView(
 //    })
 //}
 //
-private class WebViewInterface {
-    @JavascriptInterface
-    fun postMessage(msg: String) {
-        Log.d("TAG", msg)
-        if (msg.contains("onPlayerReady")) {
-            Log.d("TAG onPlayerReady", msg)
-            postMessage(webView, "playVideo")
-        } else if (msg.contains("onPlayerError")) {
-
-        }
-    }
-}
-
-fun postMessage(webView: WebView?, method: String) {
-    val script =
-        "handleReactNativeMessage({\"data\":\"{\\\"method\\\":\\\"${method}\\\",\\\"payload\\\":\\\"\\\"}\"})"
-    webView?.evaluateJavascript(script) { call ->
-        Log.d("TAG", "fine")
-    }
-}

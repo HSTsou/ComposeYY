@@ -29,7 +29,7 @@ class MainActivity : ComponentActivity() {
             Column {
                 VideoPlayer(ytVideoId = videoId)
                 Spacer(modifier = Modifier
-                    .height(4.dp)
+                    .height(2.dp)
                     .fillMaxWidth()
                     .padding(horizontal = 12.dp)
                     .background(Color.LightGray))
