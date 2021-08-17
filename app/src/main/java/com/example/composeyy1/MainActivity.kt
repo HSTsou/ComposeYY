@@ -21,7 +21,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         val videoViewModel = VideoViewModel()
         setContent {
-            val videoId: String by videoViewModel.videoId.observeAsState("")
+            val videoId: String by videoViewModel.videoId.observeAsState("") // reRender state
             val videoInfoList: List<VideoInfo> by videoViewModel.videoInfoList.observeAsState(
                 getFakeData()
             )

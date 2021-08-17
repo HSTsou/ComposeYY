@@ -25,6 +25,10 @@ var playing = MutableStateFlow(false)
 fun VideoPlayer(
     ytVideoId: String = "",
 ) {
+    /***
+     * mutableStateOf -> update to trigger recompose
+     * remember ->
+     */
     var screenWidth by remember { mutableStateOf(0) }
 
 
