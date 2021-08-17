@@ -6,11 +6,13 @@ import android.os.Handler
 import android.os.Looper.getMainLooper
 import android.util.Log
 import android.webkit.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
 
 var webView: WebView? = null
+var vId: String? = ""
 
 //const val host = "https://www.youtube.com/watch?v="
 const val host = "https://hstsou.github.io/ytPage/?video_id="
@@ -18,14 +20,17 @@ const val host = "https://hstsou.github.io/ytPage/?video_id="
 
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
-fun CustomWebView(
+fun YTWebView(
     modifier: Modifier = Modifier,
     id: String,
     width: Int,
     onGetWebViewRef: (webView: WebView?) -> Unit,
     isPlayingCB: (isPlaying: Boolean) -> Unit,
 ) {
-    Log.d("TAG", "CustomWebView start ${id}")
+    Log.d("TAG", "CustomWebView start $id")
+    vId = id
+    val realUrl = "$host${vId}&w=${width}&h=${width / 1.77}"
+
     val webViewChromeClient = object : WebChromeClient() {
         override fun onProgressChanged(view: WebView?, newProgress: Int) {
 //            onProgressChange(newProgress)
@@ -81,7 +86,6 @@ fun CustomWebView(
         }
     }
 
-    val realUrl = "$host${id}&w=${width}&h=${width / 1.77}"
 
     AndroidView(modifier = modifier, factory = { ctx ->
         WebView(ctx).apply {
@@ -108,6 +112,14 @@ fun CustomWebView(
                     Log.d("TAG", "isPlaying $playing")
                     isPlayingCB(playing)
                 }
+
+                override fun onReady() {
+                    Log.d("TAG", "onReady $vId")
+                    if (vId!!.isNotEmpty()) {
+                        postMessage(webView, "playVideo")
+                        isPlayingCB(true)
+                    }
+                }
             }
 
             addJavascriptInterface(webViewInterface, "ReactNativeWebView")
@@ -123,6 +135,8 @@ fun CustomWebView(
 
 interface OnVideoListener {
     fun isPlaying(playing: Boolean)
+
+    fun onReady()
 }
 
 private class WebViewInterface {
@@ -134,8 +148,7 @@ private class WebViewInterface {
         Log.d("TAG", msg)
         if (msg.contains("onPlayerReady")) {
             Handler(getMainLooper()).postDelayed({
-                postMessage(webView, "playVideo")
-                onVideoListener?.isPlaying(true)
+                onVideoListener?.onReady()
             }, 1000)
         } else if (msg.contains("onPlayerError")) {
             onVideoListener?.isPlaying(false)

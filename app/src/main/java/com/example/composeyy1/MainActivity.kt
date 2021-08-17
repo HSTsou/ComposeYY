@@ -31,7 +31,7 @@ class MainActivity : ComponentActivity() {
                 Spacer(modifier = Modifier
                     .height(2.dp)
                     .fillMaxWidth()
-                    .padding(horizontal = 12.dp)
+                    .padding(horizontal = 48.dp)
                     .background(Color.LightGray))
                 VideoList(
                     videoInfoList,

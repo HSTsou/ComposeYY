@@ -2,7 +2,6 @@ package com.example.composeyy1.ui.widget
 
 import android.util.Log
 import android.webkit.*
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -12,7 +11,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Color.Companion.Gray
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextAlign
@@ -31,7 +29,7 @@ fun VideoPlayer(
 
 
     Column {
-        CustomWebView(
+        YTWebView(
             modifier = Modifier
                 .fillMaxWidth()
                 .aspectRatio(1.78F)
